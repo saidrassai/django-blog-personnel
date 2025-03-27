@@ -1,0 +1,127 @@
+{% extends 'blog/base.html' %}
+
+{% block title %}{{ article.title }} - Blog Personnel{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Article Content -->
+        <article class="article-detail">
+            <h1 class="mb-2">{{ article.title }}</h1>
+            <div class="text-muted mb-3">
+                <span><i class="fas fa-user"></i> {{ article.author.username }}</span> | 
+                <span><i class="fas fa-calendar"></i> {{ article.date_posted|date:"d/m/Y à H:i" }}</span> | 
+                <span><i class="fas fa-eye"></i> {{ article.views }} vues</span>
+                {% if article.category %}
+                | <span><i class="fas fa-tag"></i> {{ article.category.name }}</span>
+                {% endif %}
+            </div>
+            
+            {% if user == article.author %}
+            <div class="mb-4">
+                <a href="{% url 'article-update' article.pk %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-edit"></i> Modifier
+                </a>
+                <a href="{% url 'article-delete' article.pk %}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-trash"></i> Supprimer
+                </a>
+            </div>
+            {% endif %}
+            
+            <div class="article-content mb-5">
+                {{ article.content|linebreaks }}
+            </div>
+            
+            <!-- Social Share Buttons -->
+            <div class="social-share mb-5">
+                <h5>Partager cet article :</h5>
+                <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" class="btn btn-primary" target="_blank">
+                    <i class="fab fa-facebook-f"></i> Facebook
+                </a>
+                <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ article.title }}" class="btn btn-info text-white" target="_blank">
+                    <i class="fab fa-twitter"></i> Twitter
+                </a>
+                <a href="mailto:?subject={{ article.title }}&body={{ request.build_absolute_uri }}" class="btn btn-secondary">
+                    <i class="fas fa-envelope"></i> Email
+                </a>
+            </div>
+            
+            <!-- Comments Section -->
+            <section class="comments-section">
+                <h3 class="mb-4">Commentaires ({{ comments.count }})</h3>
+                
+                {% if user.is_authenticated %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                {{ comment_form.content.label_tag }}
+                                {{ comment_form.content }}
+                                {% if comment_form.content.errors %}
+                                <div class="invalid-feedback">
+                                    {{ comment_form.content.errors }}
+                                </div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Commenter</button>
+                        </form>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-info mb-4">
+                    <a href="{% url 'login' %}">Connectez-vous</a> pour laisser un commentaire.
+                </div>
+                {% endif %}
+                
+                <!-- Comments List -->
+                {% if comments %}
+                <div class="comments-list">
+                    {% for comment in comments %}
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-2">
+                                <h6 class="card-subtitle mb-2 text-muted">
+                                    <i class="fas fa-user"></i> {{ comment.author.username }}
+                                </h6>
+                                <small class="text-muted"><i class="fas fa-calendar"></i> {{ comment.date_posted|date:"d/m/Y à H:i" }}</small>
+                            </div>
+                            <p class="card-text">{{ comment.content|linebreaks }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-light">Soyez le premier à commenter cet article !</div>
+                {% endif %}
+            </section>
+        </article>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Articles similaires</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    {% for similar_article in view.get_similar_articles %}
+                        {% if similar_article.id != article.id %}
+                        <a href="{% url 'article-detail' similar_article.pk %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ similar_article.title }}</h6>
+                                <small><i class="fas fa-eye"></i> {{ similar_article.views }}</small>
+                            </div>
+                            <small class="text-muted">Par {{ similar_article.author.username }}</small>
+                        </a>
+                        {% endif %}
+                    {% empty %}
+                    <p class="text-muted">Aucun article similaire disponible.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
